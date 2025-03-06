@@ -1,0 +1,184 @@
+%% 11/07/23
+
+% Load simulated SIMULINK data for different load perturbation durations and locations.
+% All results saved in time series format in 'simout' cell.
+
+% Author: Shaohui Liu
+
+
+
+%% Load simulation files
+datapath = '/mnt/Data1/Dyn_learning/Matlab_simulation/GFM_9bus/Sim_Outputs/';
+
+nl = 4; % location
+ni = 10; % duration
+nj = 10; % magnitude
+
+load_all = 1;
+if load_all < 1 
+    Filename='results100.mat';
+    load(strcat(datapath,Filename));
+else
+    t0 = cell(nl*ni*nj,1);
+    out_SM_V_terminal0 = cell(nl*ni*nj,1);
+    out_SM_states0 = cell(nl*ni*nj,1);
+    out_GFM2_V_terminal0 = cell(nl*ni*nj,1);
+    out_GFM2_states0 = cell(nl*ni*nj,1);
+    out_GFM3_V_terminal0 = cell(nl*ni*nj,1);
+    out_GFM3_states0 = cell(nl*ni*nj,1);
+    out_p0 = cell(nl*ni*nj,1); 
+    out_freq0 = cell(nl*ni*nj,1);
+    out_v0 = cell(nl*ni*nj,1);
+
+    for l = 1 : nl
+    for i = 1 : ni
+        for j = 1 : nj
+            Filename=sprintf('Location_%d_Duration_%d_Magnitude_%d%.mat', l, i, j);
+            load(strcat(datapath,Filename));
+            disp(strcat(Filename,' loaded.'))
+            
+            t0{(l-1)*100 + (l-1)*100 + (i-1)*10 + j} = sim_out.out_v.Time;
+            out_SM_V_terminal0{(l-1)*100 + (i-1)*10 + j} = sim_out.out_SM_V_terminal.Data;
+            out_SM_states0{(l-1)*100 + (i-1)*10 + j} = sim_out.out_SM_states.Data;
+            out_GFM2_V_terminal0{(l-1)*100 + (i-1)*10 + j} = sim_out.out_GFM2_V_terminal.Data;
+            out_GFM2_states0{(l-1)*100 + (i-1)*10 + j} = sim_out.out_GFM2_states.Data;
+            out_GFM3_V_terminal0{(l-1)*100 + (i-1)*10 + j} = sim_out.out_GFM3_V_terminal.Data;
+            out_GFM3_states0{(l-1)*100 + (i-1)*10 + j} = sim_out.out_GFM3_states.Data;
+            out_p0{(l-1)*100 + (i-1)*10 + j} = sim_out.out_p.Data;
+            out_freq0{(l-1)*100 + (i-1)*10 + j} = sim_out.out_freq.Data;
+            out_v0{(l-1)*100 + (i-1)*10 + j} = sim_out.out_v.Data;
+            
+            % {(l-1)*100 + (i-1)*10 + j} = ans.Pm.Data;
+        end
+    end
+    end
+end
+
+% Time step is not uniform
+
+
+%% Test plot
+
+nl = 4;
+ni = 10;
+nj = 10;
+
+t_fault = find(t0{1} > 15);
+
+figure
+for i = 1 : nl*ni*nj
+plot(t0{i}(t_fault(1):end),out_freq0{i}(:,t_fault(1):end),'LineWidth',2);
+hold on
+end
+grid on
+% legend('SM','Inverter1','Inverter2')
+title('Freq. deviation')
+
+
+%% Convert to array
+
+n_test = 100;
+n_step = size(t0{1},1);
+
+% t_data = zeros(n_step,1);
+Pm_data = zeros(n_step,n_test);
+Vf_data = zeros(n_step,n_test);
+freq_data = zeros(n_step,n_test);
+dw_data = zeros(n_step,n_test);
+Vd_data = zeros(n_step,n_test);
+Vq_data = zeros(n_step,n_test);
+Pe_data = zeros(n_step,n_test); 
+Qe_data = zeros(n_step,n_test);
+Vbus_data = zeros(n_step,n_test);
+Theta_date = zeros(n_step,n_test);
+I_data = zeros(n_step,n_test);
+ThetaI_data = zeros(n_step,n_test);
+Delta_data = zeros(n_step,n_test);
+dDelta_data = zeros(n_step,n_test);
+
+t_data = t0{1};
+for i = 1 : n_test
+    Pm_data(:,i) = Pm0{i};
+    Vf_data(:,i) = Vf0{i};
+    freq_data(:,i) = freq0{i};
+    dw_data(:,i) = dw0{i};
+    Vd_data(:,i) = Vd0{i};
+    Vq_data(:,i) = Vq0{i};
+    Pe_data(:,i) = Pe0{i}; 
+    Qe_data(:,i) = Qe0{i};
+    Vbus_data(:,i) = Vbus0{i};
+    Theta_date(:,i) = Theta0{i};
+    I_data(:,i) = Ibus0{i};
+    ThetaI_data(:,i) = ThetaI0{i};
+    Delta_data(:,i) = Delta0{i};
+    dDelta_data(:,i) = dDelta0{i};
+end
+
+%% downsample
+d_rate = 100;
+
+t_data = t_data(1 : d_rate:end,:);
+Pm_data = Pm_data(1 : d_rate:end,:);
+Vf_data = Vf_data(1 : d_rate:end,:);
+freq_data = freq_data(1 : d_rate:end,:);
+dw_data = dw_data(1 : d_rate:end,:);
+Vd_data = Vd_data(1 : d_rate:end,:);
+Vq_data = Vq_data(1 : d_rate:end,:);
+Pe_data = Pe_data(1 : d_rate:end,:); 
+Qe_data = Qe_data(1 : d_rate:end,:);
+Vbus_data = Vbus_data(1 : d_rate:end,:);
+Theta_date = Theta_date(1 : d_rate:end,:);
+I_data = I_data(1 : d_rate:end,:);
+ThetaI_data = ThetaI_data(1 : d_rate:end,:);
+Delta_data = Delta_data(1 : d_rate:end,:);
+dDelta_data = dDelta_data(1 : d_rate:end,:);
+
+%% save to csv
+filename0 = 'SMIB100_';
+
+filename = strcat(filename0,'vbus.csv');
+writematrix(Vbus_data,filename)
+filename = strcat(filename0,'theta.csv');
+writematrix(Theta_date,filename)
+filename = strcat(filename0,'current.csv');
+writematrix(I_data,filename)
+filename = strcat(filename0,'thetai.csv');
+writematrix(ThetaI_data,filename)
+
+filename = strcat(filename0,'time.csv');
+writematrix(t_data,filename)
+
+filename = strcat(filename0,'input_pm.csv');
+writematrix(Pm_data,filename)
+
+
+filename = strcat(filename0,'input_vf.csv');
+writematrix(Vf_data,filename)
+
+filename = strcat(filename0,'freq_data.csv');
+writematrix(freq_data,filename)
+
+filename = strcat(filename0,'domega.csv');
+writematrix(dw_data,filename)
+
+filename = strcat(filename0,'delta_data.csv');
+writematrix(Delta_data,filename)
+
+filename = strcat(filename0,'ddelta.csv');
+writematrix(dDelta_data,filename)
+
+filename = strcat(filename0,'vd.csv');
+writematrix(Vd_data,filename)
+
+filename = strcat(filename0,'vq.csv');
+writematrix(Vq_data,filename)
+
+filename = strcat(filename0,'pe.csv');
+writematrix(Pe_data,filename)
+
+filename = strcat(filename0,'qe.csv');
+writematrix(Qe_data,filename)
+
+
+
+
